@@ -24,6 +24,7 @@ function App() {
 			setConnectTextSt(`🔌 Account ${account} already connected ⚡ ✅`);
 		} else {
 			const wData = await walletConnectFcn();
+			console.log(wData);
 
 			let newAccount = wData[0];
 			let newNetwork = wData[2];

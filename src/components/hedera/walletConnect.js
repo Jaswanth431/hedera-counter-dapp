@@ -18,18 +18,35 @@ async function walletConnectFcn() {
 		chainId = "0x127";
 	}
 
-	await window.ethereum.request({
-		method: "wallet_addEthereumChain",
-		params: [
-			{
-				chainName: `Hedera ${network}`,
-				chainId: chainId,
-				nativeCurrency: { name: "HBAR", symbol: "ℏℏ", decimals: 18 },
-				rpcUrls: [`https://${network}.hashio.io/api`],
-				blockExplorerUrls: [`https://hashscan.io/${network}/`],
-			},
-		],
-	});
+	try {
+		await window.ethereum.request({
+		   method: "wallet_switchEthereumChain",
+		   params: [{ chainId: chainId }],
+		});
+	 } catch (switchError) {
+		// This error code indicates that the chain has not been added to MetaMask
+		if (switchError.code === 4902) {
+		   try {
+			  await window.ethereum.request({
+				 method: "wallet_addEthereumChain",
+				 params: [
+					{
+					   chainName: `Hedera ${network}`,
+					   chainId: chainId,
+					   nativeCurrency: { name: "HBAR", symbol: "HBAR", decimals: 18 },
+					   rpcUrls: [`https://${network}.hashio.io/api`],
+					   blockExplorerUrls: [`https://hashscan.io/${network}/`],
+					},
+				 ],
+			  });
+		   } catch (addError) {
+			  console.error("Failed to add the network:", addError.message);
+		   }
+		} else {
+		   console.error("Failed to switch the network:", switchError.message);
+		}
+	 }
+	 
 	console.log("- Switched ✅");
 
 	// CONNECT TO ACCOUNT
@@ -46,7 +63,16 @@ async function walletConnectFcn() {
 			return;
 		});
 
+		getAccount();
+
 	return [selectedAccount, provider, network];
 }
 
+async function getAccount() {
+	const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+	const signer = provider.getSigner();
+	const account = await signer.getAddress();
+	console.log('Account:', account);
+  }
+  
 export default walletConnectFcn;
